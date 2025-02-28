@@ -922,8 +922,14 @@ class AdminHandler(
                 self.user_id, question_id_3, skill_id_3, 0.7)
 
             topic_1 = topic_domain.Topic.create_default_topic(
-                topic_id_1, 'Dummy Topic 1', 'dummy-topic-one', 'description',
-                'fragm')
+    topic_id_1, 'Dummy Topic 1', 'dummy-topic-one', 'Dummy topic description',
+    'dummy-meta-tag'
+)
+# Add missing fields
+topic_1.update_meta_tag_content('dummy-meta')
+topic_1.thumbnail_filename = 'thumbnail.svg'
+topic_1.thumbnail_bg_color = '#C6DCDA'
+
 
             topic_1.update_meta_tag_content('dummy-meta')
             raw_image = b''
