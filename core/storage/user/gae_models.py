@@ -3061,7 +3061,7 @@ from typing import Optional
 
 class DeletedUser:
     """Domain object for deleted users."""
-    
+
     def __init__(self, user_id: str, deleted_on: datetime, reason: Optional[str] = None):
         self.user_id = user_id
         self.deleted_on = deleted_on
