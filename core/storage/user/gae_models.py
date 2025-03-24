@@ -980,10 +980,23 @@ class UserContributionsModel(base_models.BaseModel):
 
 
 class UserEmailPreferencesModel(base_models.BaseModel):
-    """Email preferences for a particular user.
+    class UserEmailPreferencesModel:
+    """Model for storing user email preferences."""
 
-    Instances of this class are keyed by the user id.
-    """
+    def __init__(self, user_id: str, email_notifications: bool, marketing_emails: bool):
+        self.user_id = user_id
+        self.email_notifications = email_notifications
+        self.marketing_emails = marketing_emails
+
+    def validate(self):
+        """Validates UserEmailPreferencesModel fields."""
+        if not isinstance(self.user_id, str) or not self.user_id:
+            raise utils.ValidationError("Invalid user_id: Must be a non-empty string.")
+        if not isinstance(self.email_notifications, bool):
+            raise utils.ValidationError("Invalid email_notifications: Must be a boolean.")
+        if not isinstance(self.marketing_emails, bool):
+            raise utils.ValidationError("Invalid marketing_emails: Must be a boolean.")
+
 
     # The user's preference for receiving general site updates. This is set to
     # None if the user has never set a preference.
@@ -3039,7 +3052,23 @@ class PendingDeletionRequestModel(base_models.BaseModel):
 
 
 class DeletedUserModel(base_models.BaseModel):
-    """Model for storing deleted user IDs."""
+    class DeletedUserModel:
+    """Model for tracking deleted users."""
+
+    def __init__(self, user_id: str, deleted_on: datetime, reason: Optional[str] = None):
+        self.user_id = user_id
+        self.deleted_on = deleted_on
+        self.reason = reason
+
+    def validate(self):
+        """Validates DeletedUserModel fields."""
+        if not isinstance(self.user_id, str) or not self.user_id:
+            raise utils.ValidationError("Invalid user_id: Must be a non-empty string.")
+        if not isinstance(self.deleted_on, datetime):
+            raise utils.ValidationError("Invalid deleted_on: Must be a valid datetime.")
+        if self.reason and not isinstance(self.reason, str):
+            raise utils.ValidationError("Invalid reason: Must be a string if provided.")
+
 
     @staticmethod
     def get_deletion_policy() -> base_models.DELETION_POLICY:
