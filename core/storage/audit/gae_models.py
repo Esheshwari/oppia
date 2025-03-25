@@ -97,60 +97,71 @@ class RoleQueryAuditModel(base_models.BaseModel):
         return cls.query(cls.user_id == user_id).get(keys_only=True) is not None
 
 
+
 class UsernameChangeAuditModel(base_models.BaseModel):
-    """Records the changes made to usernames via the admin panel.
+    """Records the changes made to usernames via the admin panel."""
 
-    Instances of this class are keyed by a custom Id.
-    [committer_id].[timestamp_in_sec]
-    """
-
-    # The ID of the user that is making the change.
-    # (Note that this is typically an admin user, who would be a different user
-    # from the one whose username is being changed.)
     committer_id = (
         datastore_services.StringProperty(required=True, indexed=True))
-    # The old username that is being changed.
     old_username = (
         datastore_services.StringProperty(required=True, indexed=True))
-    # The new username that the old one is being changed to.
     new_username = (
         datastore_services.StringProperty(required=True, indexed=True))
 
     @staticmethod
     def get_deletion_policy() -> base_models.DELETION_POLICY:
-        """Model contains data corresponding to a user: committer_id,
-        old_username, and new_username fields but it isn't deleted because it is
-        needed for auditing purposes.
-        """
-        return base_models.DELETION_POLICY.KEEP
-
-    @staticmethod
-    def get_model_association_to_user(
-    ) -> base_models.MODEL_ASSOCIATION_TO_USER:
-        """Model does not contain user data."""
-        return base_models.MODEL_ASSOCIATION_TO_USER.NOT_CORRESPONDING_TO_USER
-
-    @classmethod
-    def get_export_policy(cls) -> Dict[str, base_models.EXPORT_POLICY]:
-        """Model contains data corresponding to a user: committer_id,
-        old_username, new_username, but this isn't exported because this model
-        is only used temporarily for username changes.
-        """
-        return dict(super(cls, cls).get_export_policy(), **{
-            'committer_id': base_models.EXPORT_POLICY.NOT_APPLICABLE,
-            'old_username': base_models.EXPORT_POLICY.NOT_APPLICABLE,
-            'new_username': base_models.EXPORT_POLICY.NOT_APPLICABLE
-        })
+        """Model contains data corresponding to a user: committer_id."""
+        return base_models.DELETION_POLICY.NOT_APPLICABLE
 
     @classmethod
     def has_reference_to_user_id(cls, user_id: str) -> bool:
-        """Check whether UsernameChangeAuditModel exists for the given user.
+        """Check if any instance references the given user ID."""
+        return cls.query(cls.committer_id == user_id).get(keys_only=True) is not None
+from core.domain import base_domain
 
-        Args:
-            user_id: str. The ID of the user who has made the username changes.
+class UsernameChangeAudit(base_domain.BaseDomainObject):
+    """Domain object for username change audit records."""
 
-        Returns:
-            bool. Whether any models refer to the given user ID.
-        """
-        return cls.query(
-            cls.committer_id == user_id).get(keys_only=True) is not None
+    def __init__(self, committer_id: str, old_username: str, new_username: str):
+        self.committer_id = committer_id
+        self.old_username = old_username
+        self.new_username = new_username
+
+    def validate(self):
+        """Validates properties of UsernameChangeAudit."""
+        if not isinstance(self.committer_id, str):
+            raise ValueError("committer_id must be a string.")
+        if not isinstance(self.old_username, str) or not self.old_username:
+            raise ValueError("old_username must be a non-empty string.")
+        if not isinstance(self.new_username, str) or not self.new_username:
+            raise ValueError("new_username must be a non-empty string.")
+
+
+class DeletedUser(base_domain.BaseDomainObject):
+    """Domain object for deleted users."""
+
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+
+    def validate(self):
+        """Validates properties of DeletedUser."""
+        if not isinstance(self.user_id, str):
+            raise ValueError("user_id should be a string.")
+
+
+class UserEmailPreferences(base_domain.BaseDomainObject):
+    """Domain object for user email preferences."""
+
+    def __init__(self, user_id: str, email: str, preferences: dict):
+        self.user_id = user_id
+        self.email = email
+        self.preferences = preferences
+
+    def validate(self):
+        """Validates properties of UserEmailPreferences."""
+        if not isinstance(self.user_id, str):
+            raise ValueError("user_id should be a string.")
+        if "@" not in self.email:
+            raise ValueError("Invalid email format.")
+        if not isinstance(self.preferences, dict):
+            raise ValueError("preferences should be a dictionary.")
