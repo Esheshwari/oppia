@@ -98,23 +98,24 @@ class RoleQueryAuditModel(base_models.BaseModel):
 
 
 class UsernameChangeAuditModel(base_models.BaseModel):
-    """Records the changes made to usernames via the admin panel.
+    """Records the changes made to usernames via the admin panel."""
 
-    Instances of this class are keyed by a custom Id.
-    [committer_id].[timestamp_in_sec]
-    """
-
-    # The ID of the user that is making the change.
-    # (Note that this is typically an admin user, who would be a different user
-    # from the one whose username is being changed.)
     committer_id = (
         datastore_services.StringProperty(required=True, indexed=True))
-    # The old username that is being changed.
     old_username = (
         datastore_services.StringProperty(required=True, indexed=True))
-    # The new username that the old one is being changed to.
     new_username = (
         datastore_services.StringProperty(required=True, indexed=True))
+
+    def validate(self):
+        """Validates properties of UsernameChangeAuditModel."""
+        if not isinstance(self.committer_id, str):
+            raise ValueError('committer_id must be a string.')
+        if not isinstance(self.old_username, str) or not self.old_username:
+            raise ValueError('old_username must be a non-empty string.')
+        if not isinstance(self.new_username, str) or not self.new_username:
+            raise ValueError('new_username must be a non-empty string.')
+
 
     @staticmethod
     def get_deletion_policy() -> base_models.DELETION_POLICY:
@@ -154,3 +155,34 @@ class UsernameChangeAuditModel(base_models.BaseModel):
         """
         return cls.query(
             cls.committer_id == user_id).get(keys_only=True) is not None
+
+
+from core.domain import base_domain
+
+class DeletedUser(base_domain.BaseDomainObject):
+    """Domain object for deleted users."""
+
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+
+    def validate(self):
+        """Validates properties of DeletedUser."""
+        if not isinstance(self.user_id, str):
+            raise ValueError('user_id should be a string.')
+class UserEmailPreferences(base_domain.BaseDomainObject):
+    """Domain object for user email preferences."""
+
+    def __init__(self, user_id: str, email: str, preferences: dict):
+        self.user_id = user_id
+        self.email = email
+        self.preferences = preferences
+
+    def validate(self):
+        """Validates properties of UserEmailPreferences."""
+        if not isinstance(self.user_id, str):
+            raise ValueError('user_id should be a string.')
+        if '@' not in self.email:
+            raise ValueError('Invalid email format.')
+        if not isinstance(self.preferences, dict):
+            raise ValueError('preferences should be a dictionary.')
+
